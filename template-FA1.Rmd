@@ -1,0 +1,112 @@
+---
+title: "Dynamic Fit Index Cutoffs"
+author: "Created by Daniel McNeish and Melissa G Wolf"
+date: "`r Sys.Date()`"
+output:  pdf_document
+
+params:
+  data: NA
+  name: NA
+  Scale: NA
+  Reps: NA
+  Factors: NA
+  missing: NA
+  Group: NA
+  PD: 0
+  MI: 0
+  fit: NA
+  Del: NA
+  cutoffs: NA
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+### Basic Information
+
+**Dataset:** `r  paste(params$name)`
+
+**Sample Size:** `r  paste(nrow(data()))`
+
+**Missing Data Indicator:** `r paste(params$missing)`
+
+**Invariance Constraints Tested:** `r paste(params$MI)`
+
+**Group Variable:** `r paste(params$Group)`
+
+```{r include=F}
+if (input$Scale == "N"){
+  scale<-paste("Continuous (Normal)")
+  }
+  if (input$Scale == "L"){
+   scale<-paste("Ordinal/Likert Treated as Continuous")
+  }
+```
+
+**Response Scale:** `r scale`
+
+
+**Estimator:** `r input$est`
+
+```{r include=FALSE}
+
+  if (input$Reps == 100){
+  precision<-paste("Exploratory")
+  }
+  
+  if (input$Reps == 1000){
+  precision<-paste("Full")
+  }
+
+if (input$Reps == 10){
+  precision<-paste("Developer Test")
+  }
+
+```
+**Cutoff Precision:** `r precision`
+
+
+### Path Diagram of Your Configural Model:
+
+```{r}
+plot(params$PD)
+```
+
+### Your Model Fit Indices:
+
+```{r, results='asis'}
+kable(round(params$fit,3))
+```
+
+### Your Fit Index Differences:
+
+```{r, results='asis'}
+kable(round(params$Del,3))
+```
+
+### Your DMI Cutoffs:
+
+```{r, results='asis'}
+kable(round(params$cutoffs,3))
+```
+
+
+### Citation Recommendations:
+
+**To cite this software:**
+
+McNeish, D & Wolf, M.G. (2024). dynamic: DMI cutoffs for measurement invariance
+(version 2.0.0). [Software]. www.dynamicfit.app.
+
+Wolf, M.G. & McNeish, D. (2023). dynamic: An R package for deriving dynamic fit index cutoffs for factor analysis. Multivariate Behavioral Research, 58 (1), 189-194.
+
+**To cite the method:**
+
+McNeish, D. & Wolf, M.G. (2023). Dynamic fit index cutoffs for confirmatory factor analysis models. Psychological Methods, 28 (1), 61-88.
+
+McNeish, D. & Wolf, M.G. (2024). Direct discrepancy dynamic fit index cutoffs for arbitrary covariance structure models.  Structural Equation Modeling, 31 (5), 835-862.
+
+McNeish, D. (in press). Dynamic fit index cutoffs for treating Likert items as continuous. Psychological Methods.
