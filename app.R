@@ -10,6 +10,7 @@ library(shinycssloaders)
 library(MASS)
 library(tidyr)
 library(purrr)
+library(GenOrd)
 
 ######################## Shiny Code
 
@@ -19,7 +20,7 @@ ui <- fluidPage(
   shinyjs::useShinyjs(),
 
 ## Without Names under the title Application title
-    titlePanel(h1(HTML("Dynamic Measurement Invariance Cutoffs"), align="center", style="background-color: #127032; color: white; padding-top:10px;padding-bottom:10px; margin:bottom=0px;"),
+    titlePanel(h1(HTML("Dynamic Measurement Invariance Cutoffs"), align="center", style="background-color: #396b59; color: white; padding-top:10px;padding-bottom:10px; margin:bottom=0px;"),
                windowTitle = "Dynamic Measurement Invariance Cutoffs"
                ),
 
@@ -144,11 +145,11 @@ ui <- fluidPage(
             div(style="display:inline-block; width:100%; text-align: center;", actionButton("go", "Submit")),
 
             #make background blue
-            style="background-color: #127032;"
+            style="background-color: #396b59;"
         ),
 
    #print first 5 rows of data after it is uploaded
-   mainPanel(tableOutput("head"),
+   mainPanel(
 
      #create panels for output
      tabsetPanel(id="Tabs",
@@ -175,6 +176,9 @@ ui <- fluidPage(
                   h4(HTML("<ul><li>Separate cutoffs are provided for metric, scalar, and strong invariance "), style = "margin-bottom: 30px;"),
                  ),
        #DMI Cutoff table
+       tabPanel(title="Data Preview",
+                             tableOutput("head")
+                ),
        tabPanel(title = "DMI Table",
                  h4("Your Model Fit Indices:"),
                  tableOutput("Fit"),
@@ -197,11 +201,11 @@ ui <- fluidPage(
 
                   h4("Dynamic Measurement Invariance  Cutoffs for the Model and Data:"),
                   tableOutput("DFI"),
-                  downloadButton("download","Download DFI Report"),
+                  downloadButton("download","Download DMI Report"),
                   htmlOutput("GroupPrint"),
                   htmlOutput("GroupWarn2"),
 
-                  #downloadButton("download","Download DFI Report"),
+                  #downloadButton("download","Download DMI Report"),
                   p(HTML(" "),style="margin-top:12px;"),
                   tags$details(tags$summary("Purpose", style = "display: list-item;font-size:14px; font-weight:bold; ; margin-bottom:8px; width: 60%"),(
                    p(HTML("Measurement invariance assessement attempts to answer whether a construct is measured the same way in different groups.
@@ -364,157 +368,96 @@ ui <- fluidPage(
                 plotOutput("PD",width="7in", height="5in")
                 ),
 
-       #lavaan model
-        tabPanel(title = "lavaan Model Statement",
-                 verbatimTextOutput("Model"),
-                 p(HTML("This syntax can be copied and pasted in R to fit the same model in the lavaan package"), style="margin-top:8px;")
-                 ),
-
-       # #FAQS
-       # tabPanel(title="FAQs",
-       #          p(HTML(" "),style="margin-top:12px;"),
-       #          p(HTML("<i>Have a question that is not answered here? Submit it <a href='mailto:dmcneish@asu.edu,missgord@gmail.com?subject=DFI FAQ Suggestion'>here.</a></i>")),
-       #          p(HTML("<b><ol><li>Does the application save or cache data that are uploaded?</b>")),
-       #          tags$details(tags$summary("Answer", style = "display: list-item;"),
-       #          p(HTML("<br>No! The data are stored in a temporary folder that is deleted once the session is terminated."), style="width:60%")),
-       #
-       #          p(HTML("<br>")),
-       #
-       #          p(HTML("<b><li>How long does it take to compute DFI cutoffs? </b>")),
-       #          tags$details(tags$summary("Answer", style = "display: list-item;"),
-       #          p(HTML("<br>Computational times are a function of model size, response scale, and precision.
-       #          Some models can produce cutoffs in under a minute, other models may take 30 minutes or more.<br>
-       #          <br>
-       #          Bigger models generally require more time. Higher precision generally requires more time. The computational
-       #          time by response scale  is Normal < Non-Normal/Ordinal << Categorical. Normality is the fastest because it
-       #          simulates directly from a multivariate normal distribution and does not try to match the distributions in the data.
-       #          Computational time with other response scales is slower because they have intermediate steps to generate data
-       #          that match the distributions/categories in the data.<br>
-       #          <br>
-       #          If you are worried about computational time or have many models, start with the 'Rough' precision option.
-       #          This uses fewer simulation replications and provides a quicker (but less precise) idea of the suitable cutoffs. Reserve higher
-       #          precision for final models.<br>
-       #          <br>
-       #          Additionally, you can use the ‘Download Results Automatically’ option directly above 'Submit' to save a report of the DFI output
-       #          automatically when computation is complete so that you do not have to wait for the app or worry about being disconnected from the server
-       #          and losing your results if you walk away from the computer during longer computational times."), style="width:60%")),
-       #
-       #          p(HTML("<br>")),
-       #
-       #          p(HTML("<b><li>What is the difference between the Omitted Paths and Direct Discrepancy misspecification methods?</b>")),
-       #          tags$details(tags$summary("Answer", style = "display: list-item;"),
-       #          p(HTML("<br>
-       #          <u>Omitted Paths Approach</u>
-       #          <br>
-       #          The Omitted Path approach tries to identify hypothetical paths that could be added to the original model that would make
-       #          it approximately as misspecified as the  models stuided in Hu and Bentler (1999). The DFI cutoffs are then based on fit index values that
-       #          would allow you to detect that the selected paths had been omitted from the fitted model.<br>
-       #          <br>
-       #          As an analogy, in traditional power analysis, you pick a relevant effect size and the power analysis tells you the sample size needed to detect
-       #          the effect. With the Omitted Paths approach, an algorithm identifies relevant omitted paths (because such paths can be hard for researchers to articulate) and the DFI cutoffs
-       #          tell you the fit index values that would be able to detect that the paths were omitted.<br>
-       #          <br>
-       #          Once suitable paths are identified,the same paths are used in all DFI replications. This method most closely adheres to the design of Hu and Bentler (1999),
-       #          but the results are not always comparable across models because the approach is not standardized (i.e., different models select different paths).<br>
-       #          <br>
-       #          <u>Direct Disrepancy Approach</u>
-       #          <br>
-       #          The Direct Discrepancy method deviates from the approach in Hu and Bentler (1999) by using a <i>matrix</i> based
-       #          definition of misspecification. Misfit is not defined by specific paths but instead is defined by the average difference
-       #          between observed and predicted correlations. This method random samples a discrepancy matrix and adds it directly to your
-       #          model’s predicted correlation matrix. Simulated data will then have a different correlation matrix than predicted by the model.<br>
-       #          <br>
-       #          As an analogy, in traditional power analysis, you pick a relevant effect size and the power analysis tells you the sample size needed to detect
-       #          the effect. With the Direct Discrepancy approach, the effect size is defined by a difference in observed and predicted inter-item correlations.
-       #          The DFI cutoffs then tell you the fit index values that are able to detect that the observed and predicted inter-item correlations differ.<br>
-       #          <br>
-       #          Each replication randomly samples a new discrepancy matrix, so the cutoffs average many possible misspecifications that produce the same difference
-       #          between the observed and predicted inter-item correlations. Because this method is more direct,
-       #          it is easier to generalize to more models and results are comparable across different models. Some types of models can only be fit with this method.<br>
-       #          <br>
-       #          <u>Key Differences</u>
-       #          <ul>
-       #          <li>Direct Discrepancy considers many types of misspecification, Omitted Paths considers one type.
-       #          <li>Direct Discrepancy cutoffs are standardized, Omitted Paths are not.
-       #          <li>Direct Discrepancy can be applied to more models, Omitted Paths is limited to CFA with correlated or orthogonal factors.
-       #          <li>Omitted Paths more closely resembles Hu and Bentler (1999)
-       #          <li>Omitted Paths misspecifications are less correlated fit indices, Direct Discrepancy misspecifciation can be a little circular
-       #          </ul>
-       #          "), style="width:60%")),
-       #
-       #          p(HTML("<br>")),
-       #
-       #          p(HTML("<b><li>Can I use this for bifactor models?</b>")),
-       #          tags$details(tags$summary("Answer", style = "display: list-item;"),
-       #          p(HTML("<br>Yes! A general factor within a bifactor model can be treated just like any other factor. For instance,
-       #          if a bifactor model has 3 specific factors and 1 general factor, select 4 factors. The first 3 factors would
-       #          represent the specific factors and the 4th factor would load on all items to represent the general factor.<br>
-       #          <br>
-       #          Be sure to indicate the factors do not correlate with a bifactor model, otherwise the model may not be identified.<br>
-       #          <br>
-       #          The Direct Discrepancy method is best suited for bifactor models."), style="width:60%")),
-       #
-       #          p(HTML("<br>")),
-       #
-       #          p(HTML("<b><li>Can I use this for hierarchical models?</b>")),
-       #          tags$details(tags$summary("Answer", style = "display: list-item;"),
-       #          p(HTML("<br>Yes! After data are uploaded, if you select 3 or more factors, an option for a hierarchical model will
-       #                 appear (at least three factors are needed for a hierarchical model to be identified).<br>
-       #                 <br>
-       #                 If selecting a hierarchical model, a general factor that loads on all specified substantive factors will be included.
-       #                 Only models with a single higher-order factor that loads on all lower-order factors are supported in this application.
-       #                 More complicated hierarchical models are possible in the dynamic R package with the DDDFI function.<br>
-       #                 <br>
-       #                 When selecting the number of factors with a hierarchical model, do <b>not</b> count the general factor."), style="width:60%")),
-       #
-       #          p(HTML("<br>")),
-       #
-       #          p(HTML("<b><li>Can I use this for measurement invariance?</b>")),
-       #          tags$details(tags$summary("Answer", style = "display: list-item;"),
-       #                       p(HTML("<br>Not yet, unfortunately. Measurement invariance models have additional
-       #          nuances like an overidentified mean structure and constraints which require a different
-       #          approach than the method used in the application.<br>
-       #          <br>
-       #          However, an aim of the grant supporting this work is to develop an approach to support measurement invariance, so
-       #          support for these models may be available in the near future."), style="width:60%")),
-       #
-       #          p(HTML("<br>")),
-       #
-       #          p(HTML("<b><li>Can I use this for multilevel models?</b>")),
-       #          tags$details(tags$summary("Answer", style = "display: list-item;"),
-       #          p(HTML("<br>Not yet. Multilevel models are complicated by the fact that they have predicted and observed inter-item
-       #          correlation matrices at multiple levels. DFI has not yet been extended to accommodate nuances of level-specific fit.
-       #         "), style="width:60%")),
-       #
-       #          p(HTML("<br>")),
-       #
-       #          p(HTML("<b><li>Why is the MLR estimator not available with continuous, normal outcomes?</b>")),
-       #          tags$details(tags$summary("Answer", style = "display: list-item;"),
-       #          p(HTML("<br>The MLR and ML estimators are identical when data are truly continuous. When choosing
-       #          the continuous (normal) option for response scale, data are simulated from a
-       #          multivariate normal distribution. In this situation, the MLR estimator is unnecessary because the data
-       #          are known to be normal and the correction term drops out, making ML and MLR equivalent.<br>
-       #          <br>
-       #          If the MLR estimator is desired because non-normality is expected, choosing one of the other response scale options
-       #          is a better idea and will produce more accurate cutoffs."), style="width:60%")),
-       #
-       #          p(HTML("<br>")),
-       #
-       #          p(HTML("<b><li>Why does treating Likert/Ordinal data as continuous not allow the Direct Discrepancy method?</b>")),
-       #          tags$details(tags$summary("Answer", style = "display: list-item;"),
-       #          p(HTML("<br>When ordinal data are treated as continuous, the model is based on attenuated Pearson correlations. This makes simulating data more
-       #          challenging because there are extra steps necessary to simulate ordinal data that have a specific Pearson correlation matrix
-       #          (it requires an <i>intermediate</i> matrix).<br>
-       #          <br>
-       #          The Direct Discrepancy approach resamples misspecifications for every replication, which means that hundreds or thousands of intermediate
-       #          matrices need to be calculated. This is possible, but it can take a long time (over an hour of computation for each model). <br>
-       #          <br>
-       #          Because the Omitted Paths approach does not resample misspecification, the computational time for intermediate matrices is negligible because it only
-       #          needs to be calculated once.<br>
-       #          <br>
-       #          Therefore, we only offer the Omitted Paths approach for models that treat ordinal data as continuous to keep computational times reasonable.<br><ol>"), style="width:60%")),
-       #          p(HTML("<br>")),
-       #          ),
+        #FAQS
+        tabPanel(title="FAQs",
+                 p(HTML(" "),style="margin-top:12px;"),
+                 p(HTML("<i>Have a question that is not answered here? Submit it <a href='mailto:dmcneish@asu.edu,missgord@gmail.com?subject=DFI FAQ Suggestion'>here.</a></i>")),
+                 p(HTML("<b><ol><li>Does the application save or cache data that are uploaded?</b>")),
+                 tags$details(tags$summary("Answer", style = "display: list-item;"),
+                 p(HTML("<br>No! The data are stored in a temporary folder that is deleted once the session is terminated."), style="width:60%")),
+       
+                 p(HTML("<br>")),
+       
+                 p(HTML("<b><li>How long does it take to compute DFI cutoffs? </b>")),
+                 tags$details(tags$summary("Answer", style = "display: list-item;"),
+                 p(HTML("<br>Computational times are a function of model size, sample size, the number of invariance types being tested, and the precision.
+                 As a rough guidline, models assessing all three types of invariance with 1000 people, 3 factors, and full precision take about 5-7 minutes. <br>
+                 <br>
+                 If you are worried about computational time or have many models, start with the 'Exploratory' precision option.
+                 This uses fewer simulation replications and provides a quicker (but less precise) idea of the suitable cutoffs. Reserve the full precision option
+                 precision for final models. The exploratory precision is not sufficiently accurate for final reporting, however. <br>
+                <br>
+                 You can use the ‘Download Results Automatically’ option directly above 'Submit' to save a report of the DMI output
+                 automatically when computation is complete so that you do not have to wait for the app or worry about being disconnected from the server
+                 and losing your results if you walk away from the computer during  computation"), style="width:60%")),
+       
+                 p(HTML("<br>")),
+       
+                 p(HTML("<b><li>Which measurement invariance cutoffs is DMI trying to generalize?</b>")),
+                 tags$details(tags$summary("Answer", style = "display: list-item;"),
+                 p(HTML("<br>
+                 This application intends to reproduce and generalize the simulation from <b>Cheung & Rensvold (2002)</b>. Note that other common measurement invariance cutoff resources are
+                 Chen (2007), and Meade et al. (2008), which are not directly extended by DMI cutoffs.
+                 <br>
+                 <br>
+                 Cheung & Rensvold (2002) uses the perturbation method from Browne & Cudeck (2002)
+                 to add random sampling variability to a model-implied covariance matrix prior to data simulation. This means that the model will not fit perfectly to each group but that the groups are assumed
+                 to come from the same population. The cutoff is intended to be sensitive to group differences that exceed most extreme 1% of the fit index difference distribution
+                 if the groups were truly part of one single population.<br>
+                 <br>
+                 This means that DMI cutoffs are <i>exact</i> measurement invariance cutoffs that are intended to be identify when group differences excced sampling error. 
+                 This deviates from  non-measurement invariance contexts where cutoffs are <i>approximate</i> and intended to be sensitive to some acceptably small amount of misfit 
+                 (rather than testing if groups are equal in the population).
+                 "), style="width:60%")),
+       
+                           p(HTML("<br>")),
+                 
+                           p(HTML("<b><li>Are categorical items supported?</b>")),
+                           tags$details(tags$summary("Answer", style = "display: list-item;"),
+                                        p(HTML("<br>Not yet. DMI replicates Cheung & Rensvold (2002), which uses a method from Browne & Cudeck (1993) to simulate data with certain
+                                        levels of misfit between groups. Misfit in this method is defined with the maximum liklihood fit function, which is appropriate for continuous.
+                                        outcomes but is not used for data explicitly treated as categorical. <br>
+                                        <br>
+                                        Extensions are possible, but additional work and code development are needed.
+                                        We hope to be able to provide support for categorical outcomes in the near future."), style="width:60%")),
+                 
+                 p(HTML("<br>")),
+       
+                 p(HTML("<b><li>Can I use this for bifactor models?</b>")),
+                 tags$details(tags$summary("Answer", style = "display: list-item;"),
+                 p(HTML("<br>Yes! A general factor within a bifactor model can be treated just like any other factor. For instance,
+                 if a bifactor model has 3 specific factors and 1 general factor, select 4 factors from the DMI menu. The first 3 factors would
+                 represent the specific factors and the 4th factor would load on all items to represent the general factor.<br>
+                 <br>
+                 Be sure to indicate the factors do not correlate with a bifactor model, otherwise the model may not be identified.<br>
+                 "), style="width:60%")),
+       
+                 p(HTML("<br>")),
+       
+                 p(HTML("<b><li>Can I use this for hierarchical models?</b>")),
+                 tags$details(tags$summary("Answer", style = "display: list-item;"),
+                 p(HTML("<br>Yes! After data are uploaded, if you select 3 or more factors, an option for a hierarchical model will
+                        appear (at least three factors are needed for a hierarchical model to be identified).<br>
+                        <br>
+                        If selecting a hierarchical model, a general factor that loads on all specified substantive factors will be included.
+                        Only models with a single higher-order factor that loads on all lower-order factors are supported in this application.
+                        <br>
+                        <br>
+                        When selecting the number of factors with a hierarchical model, do <b>not</b> count the general factor.<br>
+                        <br>
+                        Note that hierarchical models with invariance constraints often have converengece difficulties and may 
+                        frequently result in errors in this application"), style="width:60%")),
+       
+                 p(HTML("<br>")),
+       
+                 p(HTML("<b><li>Why is the MLR estimator not available with continuous outcomes?</b>")),
+                 tags$details(tags$summary("Answer", style = "display: list-item;"),
+                 p(HTML("<br>The continuous option in the DMI menu simulates normal data and the MLR and ML estimators are identical when data are truly continuous. 
+                 In this situation, the MLR estimator is unnecessary because the data
+                 are known to be normal and the correction term drops out, making ML and MLR equivalent.<br>
+                 <br>
+                 Options to simulate non-normal data are a future direction and the app will be updated as these procedures are developed."), style="width:60%")),
+               ),
 
        #references
         tabPanel(style="width:70%;",title = "References",
@@ -561,7 +504,13 @@ server <- function(input, output,session) {
                validate("Invalid file; Please upload a .csv file")
         )
     })
+  
 
+  csv<-reactive({
+    input$upload
+  })
+  
+   observeEvent(csv(),{updateTabsetPanel(session, inputId = "Tabs", selected = 'Data Preview')})
 
   output$Group<-renderUI({
     req(input$upload)
@@ -575,6 +524,9 @@ server <- function(input, output,session) {
     x<-data()[,input$Group]
     return(x)
   })
+  
+ 
+  
 
   output$GroupWarn<-renderUI({
     req(input$Group)
@@ -804,7 +756,7 @@ server <- function(input, output,session) {
 
         # if hierarchical factor is present, add line to statement has load general factor 'g' on all factors
         if(as.numeric(input$GenFac==1)){
-          line[[input$Factors+1]]<-paste0("g","=~","f1")
+          line[[input$Factors+1]]<-paste0("gen","=~","f1")
           for(m in 2: input$Factors){
             line[[input$Factors+1]]<-paste0(line[[input$Factors+1]], " + ", "f",m)
           }
@@ -835,9 +787,23 @@ server <- function(input, output,session) {
     df0<-a@test$standard$df
     imp0<-a@implied$cov[[1]]
     n0<-a@Data@nobs[[1]]
+    #######################################
+    ######ML vs MLR for fit measures ######
+    #######################################
+    if(input$est=="ML"){
     indm1<-t(as.data.frame(lavaan::fitmeasures(a,c("rmsea","srmr","cfi","mfi","chisq","df","pvalue"))))
     colnames(indm1)<-c("RMSEA","SRMR","CFI","McDonald Centrality", "Chi-Square", "df","p-value")
     rownames(indm1)<-("Configural")
+    }
+    
+    if(input$est=="MLR"){
+      indm1<-t(as.data.frame(lavaan::fitmeasures(a,c("rmsea.scaled","srmr","cfi.scaled","mfi","chisq.scaled","df.scaled","pvalue.scaled"))))
+      #lavaan doesn't have scaled version of mfi, so calculate it manually
+      indm1[4]<-exp(-.5*((indm1[5]-indm1[6])/(n0-1)))
+      colnames(indm1)<-c("RMSEA","SRMR","CFI","McDonald Centrality", "Chi-Square", "df","p-value")
+      rownames(indm1)<-("Configural")
+    }
+    
 
     ##########################################################################
     ##ADD ROWS TO TABLE THAT TAKE DIFFERENCE BETWEEN CURRENT AND PREVIOUS ROW#
@@ -912,8 +878,18 @@ server <- function(input, output,session) {
       output$Intm2g2<-renderTable({q2int})
       output$Varm2g2<-renderTable({q2var})
       output$Corrm2g2<-renderTable({q2cov})
-
-      indm2<-t(as.data.frame(lavaan::fitmeasures(fit2,c("rmsea","srmr","cfi","mfi","chisq","df","pvalue"))))
+      
+      if(input$est=="ML"){
+        indm2<-t(as.data.frame(lavaan::fitmeasures(fit2,c("rmsea","srmr","cfi","mfi","chisq","df","pvalue"))))
+        colnames(indm2)<-c("RMSEA","SRMR","CFI","McDonald Centrality", "Chi-Square", "df","p-value")
+      }
+      
+      if(input$est=="MLR"){
+        indm2<-t(as.data.frame(lavaan::fitmeasures(fit2,c("rmsea.scaled","srmr","cfi.scaled","mfi","chisq.scaled","df.scaled","pvalue.scaled"))))
+        #lavaan doesn't have scaled version of mfi, so calculate it manually
+        indm2[4]<-exp(-.5*((indm2[5]-indm2[6])/(n0-1)))
+      }
+      
       colnames(indm2)<-c("RMSEA","SRMR","CFI","McDonald Centrality", "Chi-Square", "df","p-value")
       rownames(indm2)<-("Metric")
       Ind<-rbind(indm1,indm2)
@@ -1002,7 +978,17 @@ server <- function(input, output,session) {
       output$Varm3g2<-renderTable({qq2var})
       output$Corrm3g2<-renderTable({qq2cov})
 
-      indm3<-t(as.data.frame(lavaan::fitmeasures(fit3,c("rmsea","srmr","cfi","mfi","chisq","df","pvalue"))))
+      
+      if(input$est=="ML"){
+        indm3<-t(as.data.frame(lavaan::fitmeasures(fit3,c("rmsea","srmr","cfi","mfi","chisq","df","pvalue"))))
+        colnames(indm3)<-c("RMSEA","SRMR","CFI","McDonald Centrality", "Chi-Square", "df","p-value")
+      }
+      
+      if(input$est=="MLR"){
+        indm3<-t(as.data.frame(lavaan::fitmeasures(fit3,c("rmsea.scaled","srmr","cfi.scaled","mfi","chisq.scaled","df.scaled","pvalue.scaled"))))
+        #lavaan doesn't have scaled version of mfi, so calculate it manually
+        indm3[4]<-exp(-.5*((indm3[5]-indm3[6])/(n0-1)))
+      }
       colnames(indm3)<-c("RMSEA","SRMR","CFI","McDonald Centrality", "Chi-Square", "df","p-value")
       rownames(indm3)<-("Scalar")
       Ind<-rbind(indm1,indm2,indm3)
@@ -1091,7 +1077,17 @@ server <- function(input, output,session) {
       output$Varm4g2<-renderTable({qqq2var})
       output$Corrm4g2<-renderTable({qqq2cov})
 
-      indm4<-t(as.data.frame(lavaan::fitmeasures(fit4,c("rmsea","srmr","cfi","mfi","chisq","df","pvalue"))))
+      if(input$est=="ML"){
+        indm4<-t(as.data.frame(lavaan::fitmeasures(fit4,c("rmsea","srmr","cfi","mfi","chisq","df","pvalue"))))
+        colnames(indm2)<-c("RMSEA","SRMR","CFI","McDonald Centrality", "Chi-Square", "df","p-value")
+      }
+      
+      if(input$est=="MLR"){
+        indm4<-t(as.data.frame(lavaan::fitmeasures(fit4,c("rmsea.scaled","srmr","cfi.scaled","mfi","chisq.scaled","df.scaled","pvalue.scaled"))))
+        #lavaan doesn't have scaled version of mfi, so calculate it manually
+        indm4[4]<-exp(-.5*((indm4[5]-indm4[6])/(n0-1)))
+      }
+      
       colnames(indm4)<-c("RMSEA","SRMR","CFI","McDonald Centrality", "Chi-Square", "df","p-value")
       rownames(indm4)<-("Strong")
       Ind<-rbind(indm1,indm2,indm3,indm4)
@@ -1275,8 +1271,61 @@ server <- function(input, output,session) {
       return(Sigma.star)
 
     }
-
-  Sigma.star0<-datgencov(lav=lav0, n=n0, imp=imp0, dat=data(), df=df0)
+    
+     if(input$Scale=="N"){
+        imp=imp0
+     }
+    
+      if(input$Scale=="L"){
+      varname<-c(unlist(a@Data@ov.names[[1]]))
+      p<-list()
+      for (i in 1:length(varname)){
+      xx<-as.data.frame(table(data()[varname[1]]))%>% mutate(cum_sum = cumsum(Freq))
+            xx1<-xx %>% mutate(cum_prop=cum_sum/cum_sum[nrow(xx)])
+            xx2<-t(xx1[,4])
+            xx3<-xx2[,1:ncol(xx2)-1]
+            xx4<-c(xx3)
+            p[[i]]<-xx4
+      }
+      sd<-diag(imp0)
+      R<-cov2cor(imp0)
+      RR<-GenOrd::ordcont(marginal=p,Sigma=R)
+      Rd<-RR$SigmaC
+      imp<-cor2cov(Rd,sqrt(sd))
+    }
+    
+       # if(input$Scale=="N"){
+    #    imp=imp0
+    #  }
+    # 
+    #  if(input$Scale=="L"){
+    #    sd<-diag(imp0)
+    #    R<-cov2cor(imp0)
+    #    p<-list()
+    # #   
+    # #   #########################################################################
+    # #   #How to select columns in the data that correspond to items in the model#
+    # #   #########################################################################
+    #     varname<-c(unlist(a@Data@ov.names[[1]]))
+    #   
+    #   for (i in 1:length(varname)){
+    #      xx<-as.data.frame(table(data()[,varname[i]]))%>% mutate(cum_sum = cumsum(Freq))
+    #      xx1<-xx %>% mutate(cum_prop=cum_sum/cum_sum[nrow(xx)])
+    #      xx2<-t(xx1[,4])
+    #      xx3<-xx2[,1:ncol(xx2)-1]
+    #      xx4<-c(xx3)
+    #      
+    #      p[[i]]<-xx4
+    #    }
+    # #   ###################################################
+    #    
+    #    a<-GenOrd::ordcont(marginal=p,Sigma=R)
+    #    Rd<-a$SigmaC
+    #    imp<-cor2cov(Rd,sqrt(sd))
+    #    imp=imp0
+    #  }
+    
+  Sigma.star0<-datgencov(lav=lav0, n=n0, imp=imp, dat=data(), df=df0)
 
   ##########################################################
   # add feature to get proportion of sample in each group  #
@@ -1291,7 +1340,7 @@ server <- function(input, output,session) {
 
 
 
-    true_fit_MI <- function(model,reps, n0){
+    true_fit_MI <- function(model,reps, n0, Scale=input$Scale){
 
       #Can make this faster by only doing it once
       #Would need to change table. Not sure what would happen to plot.
@@ -1302,10 +1351,18 @@ server <- function(input, output,session) {
 
       #Set Seed
       set.seed(8675)
-
+      
+      if (Scale=="N"){
       datax<-as.data.frame(MASS::mvrnorm(n=n0*r, mu=rep(0,nrow(Sigma.star0)), Sigma.star0))
       colnames(datax)<-c(unlist(a@Data@ov.names[[1]]))
-
+      }
+      
+       if (Scale=="L"){
+         SigR<-cov2cor(Sigma.star0)
+         datax<-as.data.frame(GenOrd::ordsample(n=n0*r,Sigma=SigR, marginal = p))
+         colnames(datax)<-c(unlist(a@Data@ov.names[[1]]))
+       }
+      
       prop<-table(data()[,input$Group])[1]/nrow(data()[,input$Group])
 
       g<-rbinom(n0*r,1,prop)
@@ -1319,8 +1376,15 @@ server <- function(input, output,session) {
         dplyr::group_by(rep) %>%
         tidyr::nest() %>%
         base::as.list()
-
+      
+      if(input$est=="ML"){
       ind<-c("srmr", "rmsea", "cfi", "mfi")
+      }
+      
+      if(input$est=="MLR"){
+        ind<-c("srmr", "rmsea.scaled", "cfi.scaled", "mfi")
+      }
+      
       #Run 500 cfa
 
       start<-Sys.time()
@@ -1493,18 +1557,20 @@ server <- function(input, output,session) {
 
 
     output$DFI<-renderTable(Results, rownames=TRUE, digits=3)
-
+    output$Dec<-renderTable(Decision, rownames=TRUE)
+    
+    
     PD<-semPlot::semPaths(a,residuals=FALSE, intercepts=FALSE, thresholds = FALSE)
     output$PD<-renderPlot(semPlot::semPaths(a,residuals=FALSE, intercepts=FALSE, thresholds = FALSE))
-
+    
     if(input$Inv==1){
       MI<-"Metric"
     }
-
+    
     if(input$Inv==2){
       MI<-"Metric and Scalar"
     }
-
+    
     if(input$Inv==3){
       MI<-"Metric, Scalar, and Strong"
     }
