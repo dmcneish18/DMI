@@ -6,12 +6,16 @@ devtools::install_github("daattali/shinycssloaders")
 library(shiny)
 library(lavaan)
 library(dplyr)
-library(shinycssloaders)
 library(MASS)
+library(shinycssloaders)
+library(shinyjs)
+library(rmarkdown)
+library(knitr)
 library(tidyr)
 library(purrr)
 library(GenOrd)
 library(tinytex)
+library(semPlot)
 
 ######################## Shiny Code
 
